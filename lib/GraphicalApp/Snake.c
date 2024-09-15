@@ -1,11 +1,11 @@
-#include "Snake.h"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <time.h>
+
+#include "Snake.h"
 
 #define DELAY 50
-#define SNAKE_LEN 9
+#define SNAKE_LEN 8
 #define SNAKE_CONTOUR_SIZE 1
 #define MESH_X_SIZE 16
 #define MESH_Y_SIZE 8
@@ -16,7 +16,7 @@
 
 static SDL_Renderer *Renderer = NULL;
 static SDL_Window *Window = NULL;
-static int SnakeCoords[SNAKE_LEN][2] = {{0}};
+static int SnakeCoords[SNAKE_LEN][2] = {{-1}};
 static int SnakeHead = 0;
 
 static void failWithError(const char *Msg) {
@@ -36,13 +36,15 @@ static int isThereCell(int X, int Y) {
 
 static int isLegalChoose(int Choose, int PrevCell[2]) {
   if (Choose == 0)
-    return !isThereCell(PrevCell[0] - 1, PrevCell[1]);
+    return !isThereCell((PrevCell[0] - 1 + MESH_X_SIZE) % MESH_X_SIZE,
+                        PrevCell[1]);
   else if (Choose == 1)
-    return !isThereCell(PrevCell[0], PrevCell[1] + 1);
+    return !isThereCell(PrevCell[0], (PrevCell[1] + 1) % MESH_Y_SIZE);
   else if (Choose == 2)
-    return !isThereCell(PrevCell[0] + 1, PrevCell[1]);
+    return !isThereCell((PrevCell[0] + 1) % MESH_X_SIZE, PrevCell[1]);
   else if (Choose == 3)
-    return !isThereCell(PrevCell[0], PrevCell[1] - 1);
+    return !isThereCell(PrevCell[0],
+                        (PrevCell[1] - 1 + MESH_Y_SIZE) % MESH_Y_SIZE);
   else
     failWithError("Unknown Choose");
   return 0;
@@ -55,16 +57,16 @@ static void fillNewCell(int NewCell[2], int PrevCell[2]) {
     Choose = (Choose + 1) % 4;
 
   if (AttemptsLeft == 0)
-    failWithError("Бог, как видно, забирает лучших");
+    failWithError("Господь, как видно, забирает лучших");
 
   if (Choose == 0) {
     NewCell[0] = PrevCell[0] - 1;
     NewCell[1] = PrevCell[1];
   } else if (Choose == 1) {
     NewCell[0] = PrevCell[0];
-    NewCell[1] = PrevCell[1] + 1;
+    NewCell[1] = (PrevCell[1] + 1) % MESH_Y_SIZE;
   } else if (Choose == 2) {
-    NewCell[0] = PrevCell[0] + 1;
+    NewCell[0] = (PrevCell[0] + 1) % MESH_X_SIZE;
     NewCell[1] = PrevCell[1];
   } else if (Choose == 3) {
     NewCell[0] = PrevCell[0];
@@ -150,25 +152,31 @@ static void putContour(int SnakeCell) {
   int NextX = SnakeCoords[NextCell][0], NextY = SnakeCoords[NextCell][1];
   int X = SnakeCoords[SnakeCell][0], Y = SnakeCoords[SnakeCell][1];
 
-  if ((PrevY != Y - 1) && (NextY != Y - 1))
+  // Up contour
+  if ((PrevY != ((Y - 1 + MESH_Y_SIZE) % MESH_Y_SIZE)) &&
+      (NextY != ((Y - 1 + MESH_Y_SIZE) % MESH_Y_SIZE)))
     for (int PixX = X * CoeffX; PixX < (X + 1) * CoeffX; ++PixX)
       for (int PixY = Y * CoeffY; PixY < Y * CoeffY + SNAKE_CONTOUR_SIZE;
            ++PixY)
         putPixel(PixX, PixY, SNAKE_CONTOUR);
 
-  if ((PrevY != Y + 1) && (NextY != Y + 1))
+  // Down contour
+  if ((PrevY != ((Y + 1) % MESH_Y_SIZE)) && (NextY != ((Y + 1) % MESH_Y_SIZE)))
     for (int PixX = X * CoeffX; PixX < (X + 1) * CoeffX; ++PixX)
       for (int PixY = (Y + 1) * CoeffY - SNAKE_CONTOUR_SIZE;
            PixY < (Y + 1) * CoeffY; ++PixY)
         putPixel(PixX, PixY, SNAKE_CONTOUR);
 
-  if ((PrevX != X + 1) && (NextX != X + 1))
+  // Right contour
+  if ((PrevX != ((X + 1) % MESH_X_SIZE)) && (NextX != ((X + 1) % MESH_X_SIZE)))
     for (int PixX = (X + 1) * CoeffX - SNAKE_CONTOUR_SIZE;
          PixX < (X + 1) * CoeffX; ++PixX)
       for (int PixY = Y * CoeffY; PixY < (Y + 1) * CoeffY; ++PixY)
         putPixel(PixX, PixY, SNAKE_CONTOUR);
 
-  if ((PrevX != X - 1) && (NextX != X - 1))
+  // Left contour
+  if ((PrevX != ((X - 1 + MESH_X_SIZE) % MESH_X_SIZE)) &&
+      (NextX != ((X - 1 + MESH_X_SIZE) % MESH_X_SIZE)))
     for (int PixX = X * CoeffX; PixX < X * CoeffX + SNAKE_CONTOUR_SIZE; ++PixX)
       for (int PixY = Y * CoeffY; PixY < (Y + 1) * CoeffY; ++PixY)
         putPixel(PixX, PixY, SNAKE_CONTOUR);
