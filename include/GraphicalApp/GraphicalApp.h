@@ -4,11 +4,9 @@
 #define WINDOW_X_SIZE 512
 #define WINDOW_Y_SIZE 256
 
+void initApp();
+void exitApp();
 void updateScreen();
-void putCells();
-
-extern void initApp();
-extern void runApp();
-extern void exitApp();
+void putPixel(int PixX, int PixY, int Color);
 
 #endif // SNAKE_H

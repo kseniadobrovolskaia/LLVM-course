@@ -1,8 +1,10 @@
-#include "Snake.h"
+#include "GraphicalApp.h"
+
+void runSnake();
 
 int main() {
   initApp();
-  runApp();
+  runSnake();
   exitApp();
   return 0;
 }
