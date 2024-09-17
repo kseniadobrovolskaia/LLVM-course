@@ -13,6 +13,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include/GraphicalApp
                     )
 
 set(SOURCE_LIB Snake.c
+               SnakeLogic.c
                GraphicalApp.c
     )
 

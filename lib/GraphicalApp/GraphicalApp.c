@@ -1,24 +1,26 @@
 #include <SDL.h>
 #include <assert.h>
 
-#include "GraphicalApp.h"
+#include "GraphicalSnake.h"
 
 #define DELAY 50
 
 static SDL_Renderer *Renderer = NULL;
 static SDL_Window *Window = NULL;
 
+static int getXPixel(int PixX) {
+  return (PixX + WINDOW_X_SIZE) % WINDOW_X_SIZE;
+}
+
+static int getYPixel(int PixY) {
+  return (PixY + WINDOW_Y_SIZE) % WINDOW_Y_SIZE;
+}
+
 void putPixel(int PixX, int PixY, int Color) {
-  if (PixX < 0)
-    PixX += WINDOW_X_SIZE;
-  if (PixY < 0)
-    PixY += WINDOW_Y_SIZE;
-  if (PixX >= WINDOW_X_SIZE)
-    PixX %= WINDOW_X_SIZE;
-  if (PixY >= WINDOW_Y_SIZE)
-    PixY %= WINDOW_Y_SIZE;
-  assert(0 <= PixX && PixX < WINDOW_X_SIZE && "Out of range");
-  assert(0 <= PixY && PixY < WINDOW_Y_SIZE && "Out of range");
+  PixX = getXPixel(PixX);
+  PixY = getYPixel(PixY);
+  assert(0 <= PixX && PixX < WINDOW_X_SIZE && "Pixel out of range (x)");
+  assert(0 <= PixY && PixY < WINDOW_Y_SIZE && "Pixel out of range (y)");
   Uint8 A = Color >> 24;
   Uint8 R = (Color >> 16) & 0xFF;
   Uint8 G = (Color >> 8) & 0xFF;

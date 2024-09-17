@@ -1,4 +1,4 @@
-#include "GraphicalApp.h"
+#include "GraphicalSnake.h"
 
 void runSnake();
 
