@@ -1,12 +1,21 @@
 #include <SDL.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "GraphicalSnake.h"
+#include "GraphicalApp.h"
 
 #define DELAY 50
 
 static SDL_Renderer *Renderer = NULL;
 static SDL_Window *Window = NULL;
+
+int getRand() { return rand(); }
+
+void failWithError(const char *Msg) {
+  fprintf(stderr, "%s\n", Msg);
+  exit(EXIT_FAILURE);
+}
 
 static int getXPixel(int PixX) {
   return (PixX + WINDOW_X_SIZE) % WINDOW_X_SIZE;
@@ -31,6 +40,8 @@ void putPixel(int PixX, int PixY, int Color) {
 }
 
 void initApp() {
+  const int Seed = 0;
+  // srand(Seed);
   SDL_Init(SDL_INIT_VIDEO);
   SDL_CreateWindowAndRenderer(WINDOW_X_SIZE, WINDOW_Y_SIZE, 0, &Window,
                               &Renderer);
