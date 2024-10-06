@@ -65,7 +65,7 @@ struct TracePass : public PassInfoMixin<TracePass> {
 
 PassPluginLibraryInfo getPassPluginInfo() {
   const auto Callback = [](PassBuilder &PB) {
-    PB.registerPipelineStartEPCallback([&](ModulePassManager &MPM, auto) {
+    PB.registerOptimizerLastEPCallback([&](ModulePassManager &MPM, auto) {
       MPM.addPass(TracePass{});
       return true;
     });

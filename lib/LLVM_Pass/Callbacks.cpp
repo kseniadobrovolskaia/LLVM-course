@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #define MAX_STAT_INTERVAL 1000000
-#define CNT_LEADERS 5
+#define CNT_LEADERS 10
 #define FILE_FOR_TRACE "Trace.txt"
 #define FILE_FOR_STATISTIC "Statistic.txt"
 
@@ -60,7 +60,7 @@ template <size_t N> static void printPatterns(std::ostream &Os) {
   for (const auto &pair : Result) {
     Os << Opcodes[pair.first[0]];
     for (auto Op = 1u; Op < N; ++Op)
-      Os << " + " << Opcodes[pair.first[Op]];
+      Os << "_" << Opcodes[pair.first[Op]];
     Os << " -- " << pair.second << "\n";
   }
 }

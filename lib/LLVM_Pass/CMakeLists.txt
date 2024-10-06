@@ -43,3 +43,8 @@ set(SOURSES ${APP_DIR}/main.c
 add_compile_options(-O2 -fpass-plugin=./libPass.so) 
 add_executable(snakePass ${SOURSES} Callbacks.o)
 target_link_libraries(snakePass ${SDL2_LIBRARIES} -lstdc++) 
+
+add_custom_target(SnakePassIR ALL
+  COMMAND clang -O2 ${APP_DIR}/SnakeSimple.c -fpass-plugin=./libPass.so -S -emit-llvm -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -o Snake.ll
+  COMMENT "Generating LLVM-IR for Snake library" VERBATIM
+                  )
