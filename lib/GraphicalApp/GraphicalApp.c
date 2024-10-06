@@ -41,7 +41,7 @@ void putPixel(int PixX, int PixY, int Color) {
 
 void initApp() {
   const int Seed = 0;
-  // srand(Seed);
+  srand(Seed);
   SDL_Init(SDL_INIT_VIDEO);
   SDL_CreateWindowAndRenderer(WINDOW_X_SIZE, WINDOW_Y_SIZE, 0, &Window,
                               &Renderer);
