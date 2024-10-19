@@ -28,23 +28,19 @@ set(PASS_LIB TracePass.cpp
     )
 add_library(Pass SHARED ${PASS_LIB})
 
-set(CALLBACKS ${CMAKE_CURRENT_SOURCE_DIR}/Callbacks.cpp)
-add_custom_target(Callbacks ALL
-  COMMAND clang++ -std=c++20 -O2 ${CALLBACKS} -fPIC -c -o Callbacks.o
-  COMMENT "Generating callbacks" VERBATIM
-                  )
-
 set(APP_DIR ${CMAKE_SOURCE_DIR}/lib/GraphicalApp)
 set(SOURSES ${APP_DIR}/main.c
-            ${APP_DIR}/SnakeSimple.c
             ${APP_DIR}/GraphicalApp.c
     )
-
-add_compile_options(-O2 -fpass-plugin=./libPass.so) 
-add_executable(snakePass ${SOURSES} Callbacks.o)
-target_link_libraries(snakePass ${SDL2_LIBRARIES} -lstdc++) 
-
-add_custom_target(SnakePassIR ALL
-  COMMAND clang -O2 ${APP_DIR}/SnakeSimple.c -fpass-plugin=./libPass.so -S -emit-llvm -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -o Snake.ll
-  COMMENT "Generating LLVM-IR for Snake library" VERBATIM
+  
+add_custom_target(SnakeSimple ALL
+  COMMAND clang++ -O2 -fpass-plugin=./libPass.so -I${CMAKE_SOURCE_DIR}/include/GraphicalApp ${APP_DIR}/SnakeSimple.c -S -emit-llvm -o SnakeSimple.ll
+  COMMENT "Generating app with pass" VERBATIM
                   )
+
+set(CALLBACKS ${CMAKE_SOURCE_DIR}/lib/LLVM_Pass/Callbacks.cpp)
+add_custom_target(SnakePass ALL
+  COMMAND clang++ -O2 ${SDL2_LIBRARIES} -I${SDL2_INCLUDE_DIRS} -lSDL2 -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -std=c++20 -lstdc++ ${SOURSES} ${CALLBACKS} SnakeSimple.ll -o snakePass
+  COMMENT "Generating executable snakePass" VERBATIM
+                  )
+

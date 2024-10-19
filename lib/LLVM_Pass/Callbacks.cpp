@@ -5,9 +5,10 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #define MAX_STAT_INTERVAL 1000000
-#define CNT_LEADERS 10
+#define CNT_LEADERS 7
 #define FILE_FOR_TRACE "Trace.txt"
 #define FILE_FOR_STATISTIC "Statistic.txt"
 
@@ -26,6 +27,7 @@ int countOccurences(It ContBegin, It ContEnd, It PattBegin, It PattEnd) {
 }
 
 auto findTop(const auto &Map) {
+  assert(Map.begin() != Map.end());
   std::vector<std::pair<std::vector<short>, unsigned long long>> Vec(
       Map.begin(), Map.end());
   std::sort(Vec.begin(), Vec.end(),

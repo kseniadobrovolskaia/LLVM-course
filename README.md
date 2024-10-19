@@ -16,9 +16,9 @@
 
 Статистика вместе встречающихся опкодов
 
+[3. Генератор LLVM IR](#4)
 
-
-[3. Сборка ](#2)
+[4. Сборка ](#2)
 
 Компиляция *snake*
 
@@ -65,11 +65,26 @@ $ ./snakePass
 ![example](Images/OpcodesFour.png) 
 ![example](Images/OpcodesFive.png) 
 
-Видно, что самая встречающаяся инструкция -- *trunc*, которая часто встречается вместе с *lshr*. А самый частый из более длинных паттернов -- цепочка из *load* и *call*.
+Видно, что самая встречающаяся инструкция -- *br*, которая часто встречается вместе с *icmp*. Самый частый из более длинных паттернов -- цепочка *add*-*icmp*-*br*.
 
 -----------------------------------------------------------------------------
 
+<a name="4"></a>
+ ## Генератор LLVM IR
 
+> [!NOTE]
+> **genInterpretIR** - программа, которая печатает LLVM IR упрощенного приложения *snakeSimple* в файл (*IR_Gen-Interpret/OutputIR.dump*). Этот LLVM IR практически идентичен тому, что сгенерировал clang (*LLVM_IR/Snake.ll*).
+>
+> Затем этот IR интерпретируется и ненадолго появляется графическое окно со змейкой. 
+
+```
+$ ./genInterpretIR
+```
+```
+LLVM IR в файле OutputIR.dump
+```
+
+-----------------------------------------------------------------------------
  
  <a name="2"></a>
  ## Сборка 
@@ -91,8 +106,9 @@ $ cd build/
 $ make
 ```
 
-* Программа *snake* будет в *build/lib/GraphicalApp*.
-* LLVM IR для *snake* будет в *build/lib/LLVM_IR*.
+* Программа *snake* и *snakeSimple* будут в *build/lib/GraphicalApp*.
+* LLVM IR для *snakeSimple* будет в *build/lib/LLVM_IR*.
 * Программа *snakePass* будет в *build/lib/LLVM_Pass*.
+* Программа *genInterpretIR* будет в *build/lib/IR_Gen-Interpret*.
 
 

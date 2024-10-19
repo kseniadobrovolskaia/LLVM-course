@@ -5,6 +5,7 @@ project(LLVM_IR)
 set(APP_SRC ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/SnakeSimple.c)
 
 add_custom_target(SnakeIR ALL
-  COMMAND clang ${APP_SRC} -O2 -S -emit-llvm -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -o Snake.ll
+  COMMAND clang -O2 -I${CMAKE_SOURCE_DIR}/include/GraphicalApp ${APP_SRC} -S -emit-llvm -o Snake.ll
   COMMENT "Generating LLVM-IR for Snake library" VERBATIM
                   )
+

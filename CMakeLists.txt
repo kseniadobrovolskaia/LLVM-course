@@ -7,4 +7,5 @@ set(CMAKE_VERBOSE_MAKEFILE off)
 add_subdirectory(lib/GraphicalApp)
 add_subdirectory(lib/LLVM_Pass)
 add_subdirectory(lib/LLVM_IR)
+add_subdirectory(lib/IR_Gen-Interpret)
 

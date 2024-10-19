@@ -2,7 +2,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 
-#define LAST_FUNC_NAME "exitApp"
+#define LAST_FUNC_NAME "finalizeSnake"
 
 namespace llvm {
 
