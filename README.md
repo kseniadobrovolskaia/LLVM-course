@@ -18,7 +18,9 @@
 
 [3. Генератор LLVM IR](#4)
 
-[4. Сборка ](#2)
+[4. Ассемблер в IR](#5)
+
+[5. Сборка ](#2)
 
 Компиляция *snake*
 
@@ -79,6 +81,76 @@ $ ./snakePass
 
 ```
 $ ./genInterpretIR
+```
+```
+LLVM IR в файле OutputIR.dump
+```
+
+-----------------------------------------------------------------------------
+ 
+<a name="5"></a>
+ ## Ассемблер в IR
+
+> [!NOTE]
+> **asmExec** - программа, которая выполняет программу на ассемблере. Она также создаёт из этого ассемблера LLVM IR. 
+
+
+### Поддерживаемые операции
+
+1. **Арифметические инструкции**
+
+* ADDI rd rs1 imm
+    + rd = rs1 + imm
+
+* ADD rd rs1 rs2
+    + rd = rs1 + rs2
+
+* XOR rd rs1 rs2
+    + rd = rs1 ^ rs2
+
+* CMP_EQ rd rs1 rs2
+    + rs1 == rs2 ? rd = 1 : rd = 0
+
+* CMP_LT rd rs1 rs2
+    + rs1 < rs2 ? rd = 1 : rd = 0
+
+* SLI rd rs1 imm
+    + rd = rs1 << imm
+
+* SRI rd rs1 imm
+    + логический сдвиг вправо
+    + rd = rs1 >> imm
+
+* MODI rd rs1 imm
+    + rd = rs1 % imm
+
+* DIVI rd rs1 imm
+    + rd = rs1 / imm
+
+
+2. **Вызовы функций**
+
+* UPDATE_SCREEN
+    + очищение экрана
+
+* PUT_PIXEL rs1 rs2 12187338
+    + rs1 - координата x
+    + rs2 - координата y
+    + rs3 - цвет
+
+* EXIT
+    + выход из программы
+
+3. **Инструкции потока управления**
+
+* BR_NOT rs1 label
+    + rs1 - булева переменная
+    + label - метка для перемещения, если rs == false
+    + проваливается дальше, если rs == true
+
+
+```
+$ ./asmExec Snake.s
 ```
 ```
 LLVM IR в файле OutputIR.dump

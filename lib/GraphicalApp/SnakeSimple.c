@@ -25,9 +25,8 @@ void finalizeSnake() {}
 }
 #endif // __cplusplus
 
-static int getYCell(int CellY) { return (CellY + MESH_Y_SIZE) % MESH_Y_SIZE; }
 static void putCell(int X, int Y, int Color) {
-  Y = getYCell(Y);
+  Y = (Y + MESH_Y_SIZE) % MESH_Y_SIZE;
 
   for (int PixX = X * COEFF_X; PixX < (X + 1) * COEFF_X; ++PixX) {
     for (int PixY = Y * COEFF_Y; PixY < (Y + 1) * COEFF_Y; ++PixY)
