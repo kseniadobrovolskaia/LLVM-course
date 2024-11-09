@@ -114,24 +114,11 @@ LLVM IR в файле OutputIR.dump
 * CMP_LT rd rs1 rs2
     + rs1 < rs2 ? rd = 1 : rd = 0
 
-* SLI rd rs1 imm
-    + rd = rs1 << imm
-
-* SRI rd rs1 imm
-    + логический сдвиг вправо
-    + rd = rs1 >> imm
-
-* MODI rd rs1 imm
-    + rd = rs1 % imm
-
-* DIVI rd rs1 imm
-    + rd = rs1 / imm
-
 
 2. **Вызовы функций**
 
 * UPDATE_SCREEN
-    + очищение экрана
+    + обновление экрана
 
 * PUT_PIXEL rs1 rs2 12187338
     + rs1 - координата x

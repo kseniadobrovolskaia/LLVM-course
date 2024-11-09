@@ -8,4 +8,5 @@ add_subdirectory(lib/GraphicalApp)
 add_subdirectory(lib/LLVM_Pass)
 add_subdirectory(lib/LLVM_IR)
 add_subdirectory(lib/IR_Gen-Interpret)
+add_subdirectory(lib/ASM_to_IR)
 
