@@ -13,8 +13,8 @@ set(SOURSES ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/SnakeSimple.c
     )
 
 add_custom_target(ASM_to_IR ALL
-  COMMAND clang++ -o execASM
-  -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -I${CMAKE_SOURCE_DIR}/include/ASM_to_IR ${SOURSES} -lSDL2 -I/usr/lib/llvm-14/include -std=c++14 -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -L/usr/lib/llvm-14/lib /usr/lib/llvm-14/lib/libLLVM-14.so  
+  COMMAND clang++ -std=c++20 -o execAsm
+  -I${CMAKE_SOURCE_DIR}/include/GraphicalApp -I${CMAKE_SOURCE_DIR}/include/ASM_to_IR ${SOURSES} -lSDL2 -I/usr/lib/llvm-14/include -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -L/usr/lib/llvm-14/lib /usr/lib/llvm-14/lib/libLLVM-14.so  
 COMMENT "Generating ASM to IR" VERBATIM
                   )
 
