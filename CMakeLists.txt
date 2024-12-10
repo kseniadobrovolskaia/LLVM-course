@@ -10,4 +10,5 @@ add_subdirectory(lib/LLVM_IR)
 add_subdirectory(lib/IR_Gen-Interpret)
 add_subdirectory(lib/ASM_to_IR)
 add_subdirectory(lib/Frontend)
+add_subdirectory(Test)
 

@@ -17,9 +17,9 @@ add_custom_target(FlexRun ALL
 
 add_custom_target(ClangRun ALL
   COMMAND clang++ -o SnakeLang
-  lex.yy.c SnakeLang.tab.c -I${CMAKE_SOURCE_DIR}/include/GraphicalApp ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/GraphicalApp.c -lSDL2 -I/usr/lib/llvm-14/include -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -L/usr/lib/llvm-14/lib /usr/lib/llvm-14/lib/libLLVM-14.so)
+  lex.yy.c SnakeLang.tab.c ${SL_DIR}/main.cpp -I${CMAKE_SOURCE_DIR}/build/lib/Frontend -I${CMAKE_SOURCE_DIR}/lib/Frontend -I${CMAKE_SOURCE_DIR}/include/GraphicalApp ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/GraphicalApp.c -lSDL2 -I/usr/lib/llvm-14/include -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -L/usr/lib/llvm-14/lib /usr/lib/llvm-14/lib/libLLVM-14.so)
 
 add_custom_target(SnakeLangRun ALL
-  COMMAND cat ${SL_DIR}/Snake.sl | ./SnakeLang)
+  COMMAND ./SnakeLang ${SL_DIR}/Snake.sl)
 
 

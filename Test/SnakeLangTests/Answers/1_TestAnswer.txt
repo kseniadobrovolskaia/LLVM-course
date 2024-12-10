@@ -1,0 +1,2 @@
+CHECK: [VERIFICATION] OK
+CHECK: step = 5

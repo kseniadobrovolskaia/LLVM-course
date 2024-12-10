@@ -1,136 +1,24 @@
 %{
 #include <iostream>
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/Support/TargetSelect.h"
-using namespace llvm;
+#include "GraphicalApp.h"
+#include "Lexems.h"
 
 #define YYSTYPE Value*
-extern "C" {
-    int yyparse();
-    int yylex();
-    void yyerror(char *s) {
-        std::cerr << s << "\n";
-    }
-    int yywrap(void){return 1;}
+
+void yyerror(char *s) {
+    std::cerr << s << "\n";
 }
+int yywrap(void){return 1;}
 
-#include "GraphicalApp.h"
+extern LLVMContext context;
+extern IRBuilder<>* builder;
+extern Module* module;
+extern Function *curFunc;
+extern FunctionCallee updateScreenFunc;
+extern FunctionCallee putPixelFunc;
 
-LLVMContext context;
-IRBuilder<>* builder;
-Module* module;
-Function *curFunc;
-FunctionCallee updateScreenFunc;
-FunctionCallee putPixelFunc;
-
-typedef struct {
-    GlobalVariable* irVal;
-    int realVal;
-} value_t;
-std::map<std::string, value_t> ValueMap;
-
-
-typedef struct {
-    GlobalVariable* irVal;
-    int size;
-    int initVal;
-    int* realVal;
-} array_t;
-std::map<std::string, array_t> ArrayMap;
-
-std::map<std::string, BasicBlock *> BBMap;
-
-int main(int argc, char **argv)
-{
-    InitializeNativeTarget();
-    InitializeNativeTargetAsmPrinter();
-
-    // ; ModuleID = 'top'
-    // source_filename = "top"
-    module = new Module("top", context);
-    builder = new IRBuilder<> (context);
-
-    Type *voidType = Type::getVoidTy(context);
-    // declare void @putPixel(i32 noundef, i32 noundef, i32 noundef)
-    ArrayRef<Type *> putPixelParamTypes = {Type::getInt32Ty(context),
-                                                Type::getInt32Ty(context),
-                                                Type::getInt32Ty(context)};
-    FunctionType *putPixelType =
-        FunctionType::get(voidType, putPixelParamTypes, false);
-    putPixelFunc =
-        module->getOrInsertFunction("putPixel", putPixelType);
-
-    // declare void @updateScreen(...)
-    FunctionType *updateScreenType = FunctionType::get(voidType, false);
-    updateScreenFunc =
-        module->getOrInsertFunction("updateScreen", updateScreenType);
-
-    yyparse();
-
-    outs() << "[LLVM IR]:\n";
-    module->print(outs(), nullptr);
-    outs() << "\n";
-    bool verif = verifyModule(*module, &outs());
-    outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
-
-    // Interpreter of LLVM IR
-    outs() << "[EE] Run\n";
-    ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
-    ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
-        if (fnName == "updateScreen") {
-            return reinterpret_cast<void *>(updateScreen);
-        }
-        if (fnName == "putPixel") {
-            return reinterpret_cast<void *>(putPixel);
-        }
-        return nullptr;
-    });
-
-    for (auto& value : ValueMap) {
-        ee->addGlobalMapping(value.second.irVal, &value.second.realVal);
-    }
-    for (auto& array : ArrayMap) {
-        array.second.realVal = new int[array.second.size];
-        for (int i = 0; i < array.second.size; i++) {
-            array.second.realVal[i] = array.second.initVal;
-        }
-        ee->addGlobalMapping(array.second.irVal, array.second.realVal);
-    }
-
-    ee->finalizeObject();
-
-    initApp();
-
-	std::vector<GenericValue> noargs;
-    Function *mainFunc = module->getFunction("main");
-    if (mainFunc == nullptr) {
-	    outs() << "Can't find main\n";
-        return -1;
-    }
-	ee->runFunction(mainFunc, noargs);
-    outs() << "[EE] Done\n";
-
-    for (auto& value : ValueMap) {
-        outs() << value.first << " = " <<  value.second.realVal << "\n";
-    }
-    for (auto& array : ArrayMap) {
-        outs() << array.first << "[" << array.second.size << "] =";
-        for (int i = 0; i < array.second.size; i++) {
-            outs() << " " << array.second.realVal[i];
-        }
-        outs() << "\n";
-        delete array.second.realVal;
-    }
-
-    exitApp();
-    return 0;
-}
+extern std::map<std::string, value_t> ValueMap;
+extern std::map<std::string, BasicBlock *> BBMap;
 %}
 
 %token IntLiteral
@@ -139,40 +27,21 @@ int main(int argc, char **argv)
 %token CallFunction
 %token Identifier
 %token IfToken
-%token GotoToken
-%token PutToken
-%token FlushToken
+%token CrawlToken
+%token PutPixelToken
+%token UpdateScreenToken
+%token EndlToken
 
 %%
 
 Parse: Program {YYACCEPT;}
 
 Program: RoutineDeclaration {}
-         | VariableDeclaration {} 
-         | Program VariableDeclaration {}
+         | Assignment {}
          | Program RoutineDeclaration {}
+         | Program Assignment {}
 
-VariableDeclaration : Identifier '=' IntLiteral ';' {
-                            printf("Identifier '=' IntLiteral ';'\n");
-                            module->getOrInsertGlobal((char*)$1, builder->getInt32Ty());
-                            value_t val;
-                            val.irVal = module->getNamedGlobal((char*)$1);
-                            val.realVal = atoi((char*)$3);
-                            ValueMap.insert({(char*)$1, val});
-                        }
-                    | Identifier '[' IntLiteral ']''=' IntLiteral ';' {
-                            printf("Identifier '[' IntLiteral ']''=' IntLiteral ';'\n");
-                            int size = atoi((char*)$3);
-                            ArrayType *arrayType = ArrayType::get(builder->getInt32Ty(), size);
-                            module->getOrInsertGlobal((char*)$1, arrayType);
-                            array_t arr;
-                            arr.irVal = module->getNamedGlobal((char*)$1);
-                            arr.size = atoi((char*)$3);
-                            arr.initVal = atoi((char*)$6);
-                            ArrayMap.insert({(char*)$1, arr});
-                        }
-
-RoutineDeclaration : FunctionBegin Identifier   {
+RoutineDeclaration : FunctionBegin Identifier '{'  {
                             printf("FunctionBegin Identifier ...\n");
                             // declare void @Identifier()
                             Function *func = module->getFunction((char*)$2);
@@ -191,24 +60,29 @@ RoutineDeclaration : FunctionBegin Identifier   {
                         }
 
 Statements: Assignment {printf("Assignment\n");}
+            | Crawl  {}
+            | IfStatement {}
+            | PutPixel  {}
+            | UpdateScreen {}
+            | RoutineCall {}
             | Statements Assignment {printf("Statements Assignment\n");}
             | Statements RoutineCall {printf("Statements RoutineCall\n");}
             | Statements IfStatement {printf("Statements IfStatement\n");}
             | Statements Label {printf("Statements Label\n");}
-            | Statements GoTo {printf("Statements GoTo\n");}
-            | Statements Put {printf("Statements Put\n");}
-            | Statements Flush {printf("Statements Flush\n");}
+            | Statements Crawl {printf("Statements Crawl\n");}
+            | Statements PutPixel {printf("Statements PutPixel\n");}
+            | Statements UpdateScreen {printf("Statements UpdateScreen\n");}
 
-Put : PutToken '('Expression','Expression','Expression')' ';' {
+PutPixel : PutPixelToken '('Expression','Expression','Expression')' EndlToken {
                             Value *args[] = {$3, $5, $7};
                             builder->CreateCall(putPixelFunc, args);
                         }
 
-Flush : FlushToken ';' { builder->CreateCall(updateScreenFunc); }
+UpdateScreen : UpdateScreenToken EndlToken { builder->CreateCall(updateScreenFunc); }
 
-Assignment: Value '=' Expression ';' { printf("Value '=' Expression ';'\n"); builder->CreateStore($3, $1); }
+Assignment: Value '=' Expression EndlToken { printf("Value '=' Expression EndlToken\n"); builder->CreateStore($3, $1); }
 
-RoutineCall: CallFunction Identifier ';' {
+RoutineCall: CallFunction Identifier EndlToken {
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
                                 FunctionType *funcType = 
@@ -218,18 +92,20 @@ RoutineCall: CallFunction Identifier ';' {
                             builder->CreateCall(func);
                         }
 
-IfStatement: IfToken Expression '|' Identifier '|' Identifier ';' {
-                            if (BBMap.find((char*)$4) == BBMap.end()) {
-                                BBMap.insert({(char*)$4, BasicBlock::Create(context, (char*)$4, curFunc)});
+IfStatement: IfToken '('Expression')' ':' Identifier EndlToken Identifier ':' {
+                            if (BBMap.find((char*)$8) == BBMap.end()) {
+                                BBMap.insert({(char*)$8, BasicBlock::Create(context, (char*)$8, curFunc)});
                             }
                             if (BBMap.find((char*)$6) == BBMap.end()) {
                                 BBMap.insert({(char*)$6, BasicBlock::Create(context, (char*)$6, curFunc)});
                             }
-                            Value *cond = builder->CreateICmpNE($2, builder->getInt32(0));
-                            builder->CreateCondBr(cond, BBMap[(char*)$4], BBMap[(char*)$6]);
+                            Value *cond = builder->CreateICmpNE($3, builder->getInt32(0));
+                            builder->CreateCondBr(cond, BBMap[(char*)$8], BBMap[(char*)$6]);
+                            BasicBlock *BB = BBMap[(char*)$8];
+                            builder->SetInsertPoint(BB);
                         }
 
-Label: Identifier ':'   {
+Label:  Identifier ':'   {
                             if (BBMap.find((char*)$1) == BBMap.end()) {
                                 BBMap.insert({(char*)$1, BasicBlock::Create(context, (char*)$1, curFunc)});
                             }
@@ -237,7 +113,7 @@ Label: Identifier ':'   {
                             builder->SetInsertPoint(BB);
                         }
 
-GoTo:  GotoToken Identifier ';' {
+Crawl:  CrawlToken Identifier EndlToken {
                             if (BBMap.find((char*)$2) == BBMap.end()) {
                                 BBMap.insert({(char*)$2, BasicBlock::Create(context, (char*)$2, curFunc)});
                             }
@@ -273,14 +149,15 @@ Primary:    IntLiteral { $$ = builder->getInt32(atoi((char*)$1)); }
 ;
 
 Value:      Identifier  {
+                            if (ValueMap.find((char*)$1) == ValueMap.end()) {
+                              printf("Declaration\n");
+                              module->getOrInsertGlobal((char*)$1, builder->getInt32Ty());
+                              value_t val;
+                              val.irVal = module->getNamedGlobal((char*)$1);
+                              val.realVal = 100500;
+                              ValueMap.insert({(char*)$1, val});
+                            } else
+                              printf("Usage\n");
                             $$ = builder->CreateConstGEP1_32(builder->getInt32Ty(), ValueMap[(char*)$1].irVal, 0);
                         }
-            | Identifier '[' Expression ']' {
-                            ArrayType *arrayType = ArrayType::get(builder->getInt32Ty(), ArrayMap[(char*)$1].size);
-                            std::vector<Value *> gepArgs;
-                            gepArgs.push_back(builder->getInt32(0));
-                            gepArgs.push_back($3);
-                            $$ = builder->CreateGEP(arrayType, ArrayMap[(char*)$1].irVal, gepArgs);
-                        }
-
 %%

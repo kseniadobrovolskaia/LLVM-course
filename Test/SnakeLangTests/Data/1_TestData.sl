@@ -1,3 +1,5 @@
+// 1 Test: SsPutPixel, SsUpdateScreen
+
 // This program draw a snake that crawls
 
 // Function that draw snake
@@ -52,7 +54,7 @@ SsFun SsMain {
     SsCall drawBackground__
     SsCall drawSnake__
     SsUpdateScreen__
-    SsIf (step < 10) : loopStepEnd__
+    SsIf (step < 5) : loopStepEnd__
       iterStep:
         step = step + 1__
         SsCrawl loopStep__
