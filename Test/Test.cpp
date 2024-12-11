@@ -11,13 +11,6 @@ static const std::string getNameResults(unsigned NumTest,
   return ResultDir + std::to_string(NumTest) + File;
 }
 
-static const std::string getNameAnswers(unsigned NumTest,
-                                        const std::string Dir) {
-  const auto AnswerDir = Dir + "/Answers/";
-  const auto File = "_TestAnswer.txt";
-  return AnswerDir + std::to_string(NumTest) + File;
-}
-
 const std::string getNameData(unsigned NumTest, const std::string Dir) {
   const auto DataDir = Dir + "/Data/";
   const auto File = "_TestData.sl";
@@ -31,10 +24,10 @@ const std::string getNameData(unsigned NumTest, const std::string Dir) {
  */
 ::testing::AssertionResult checkTrace(unsigned NumTest,
                                       const std::string CurrTestDir) {
-  auto NameAnswer = getNameAnswers(NumTest, CurrTestDir);
   auto NameResult = getNameResults(NumTest, CurrTestDir);
+  auto NameData = getNameData(NumTest, CurrTestDir);                            
 
-  std::string CheckCmd = "cat " + NameResult + " | FileCheck " + NameAnswer;
+  std::string CheckCmd = "cat " + NameResult + " | FileCheck " + NameData;
   auto Result = system(CheckCmd.c_str());
   if (Result != 0) {
     return ::testing::AssertionFailure()

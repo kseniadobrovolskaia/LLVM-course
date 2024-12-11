@@ -4,6 +4,7 @@
 #include "Lexems.h"
 
 #define YYSTYPE Value*
+//#define DEBUG
 
 void yyerror(char *s) {
     std::cerr << s << "\n";
@@ -16,6 +17,7 @@ extern Module* module;
 extern Function *curFunc;
 extern FunctionCallee updateScreenFunc;
 extern FunctionCallee putPixelFunc;
+extern FunctionCallee printFunc;
 
 extern std::map<std::string, value_t> ValueMap;
 extern std::map<std::string, BasicBlock *> BBMap;
@@ -29,6 +31,7 @@ extern std::map<std::string, BasicBlock *> BBMap;
 %token IfToken
 %token CrawlToken
 %token PutPixelToken
+%token PrintToken
 %token UpdateScreenToken
 %token EndlToken
 
@@ -37,12 +40,25 @@ extern std::map<std::string, BasicBlock *> BBMap;
 Parse: Program {YYACCEPT;}
 
 Program: RoutineDeclaration {}
-         | Assignment {}
+         | VariableDeclaration {}
+         | Program VariableDeclaration {}
          | Program RoutineDeclaration {}
-         | Program Assignment {}
+
+VariableDeclaration : Identifier '=' IntLiteral EndlToken {
+#ifdef DEBUG
+                            printf("Identifier '=' IntLiteral ';'\n");
+#endif
+                            module->getOrInsertGlobal((char*)$1, builder->getInt32Ty());
+                            value_t val;
+                            val.irVal = module->getNamedGlobal((char*)$1);
+                            val.realVal = atoi((char*)$3);
+                            ValueMap.insert({(char*)$1, val});
+                        }
 
 RoutineDeclaration : FunctionBegin Identifier '{'  {
+#ifdef DEBUG
                             printf("FunctionBegin Identifier ...\n");
+#endif
                             // declare void @Identifier()
                             Function *func = module->getFunction((char*)$2);
                             if (func == nullptr) {
@@ -55,32 +71,98 @@ RoutineDeclaration : FunctionBegin Identifier '{'  {
                             BasicBlock *entryBB = BasicBlock::Create(context, "entry", curFunc);
                             builder->SetInsertPoint(entryBB);
                         } Statements FunctionEnd { 
+#ifdef DEBUG
                             printf("... Statements FunctionEnd\n");
+#endif
                             builder->CreateRetVoid();
                         }
 
-Statements: Assignment {printf("Assignment\n");}
+Statements: Assignment {
+#ifdef DEBUG
+          printf("Assignment\n");
+#endif
+}
             | Crawl  {}
+            | Var {}
             | IfStatement {}
+            | Label {}
             | PutPixel  {}
+            | Print  {}
             | UpdateScreen {}
             | RoutineCall {}
-            | Statements Assignment {printf("Statements Assignment\n");}
-            | Statements RoutineCall {printf("Statements RoutineCall\n");}
-            | Statements IfStatement {printf("Statements IfStatement\n");}
-            | Statements Label {printf("Statements Label\n");}
-            | Statements Crawl {printf("Statements Crawl\n");}
-            | Statements PutPixel {printf("Statements PutPixel\n");}
-            | Statements UpdateScreen {printf("Statements UpdateScreen\n");}
+            | Statements Var {
+#ifdef DEBUG
+printf("Statements VExpressio\n");
+#endif
+}
+            | Statements Assignment {
+#ifdef DEBUG
+printf("Statements Assignment\n");
+#endif
+}
+            | Statements RoutineCall {
+#ifdef DEBUG
+printf("Statements RoutineCall\n");
+#endif
+}
+            | Statements IfStatement {
+#ifdef DEBUG
+printf("Statements IfStatement\n");
+#endif
+}
+            | Statements Label {
+#ifdef DEBUG
+printf("Statements Label\n");
+#endif
+}
+            | Statements Crawl {
+#ifdef DEBUG
+printf("Statements Crawl\n");
+#endif
+}
+            | Statements PutPixel {
+#ifdef DEBUG
+printf("Statements PutPixel\n");
+#endif
+}
+            | Statements Print {
+#ifdef DEBUG
+printf("Statements Print\n");
+#endif
+}
+            | Statements UpdateScreen {
+#ifdef DEBUG
+printf("Statements UpdateScreen\n");
+#endif
+}
 
 PutPixel : PutPixelToken '('Expression','Expression','Expression')' EndlToken {
                             Value *args[] = {$3, $5, $7};
                             builder->CreateCall(putPixelFunc, args);
                         }
 
+Print : PrintToken'('Expression')'EndlToken {
+                            Value *args[] = {builder->CreateGlobalStringPtr("%d\n"), $3};
+                            builder->CreateCall(printFunc, args);
+                        }
+
+Var : Expression EndlToken {}
+
 UpdateScreen : UpdateScreenToken EndlToken { builder->CreateCall(updateScreenFunc); }
 
-Assignment: Value '=' Expression EndlToken { printf("Value '=' Expression EndlToken\n"); builder->CreateStore($3, $1); }
+Assignment: Identifier '=' Expression EndlToken { 
+#ifdef DEBUG
+          printf("Value '=' Expression EndlToken\n"); 
+#endif
+        if (ValueMap.find((char*)$1) == ValueMap.end()) {
+                              module->getOrInsertGlobal((char*)$1, builder->getInt32Ty());
+                              value_t val;
+                              val.irVal = module->getNamedGlobal((char*)$1);
+                              val.realVal = 100500;
+                              ValueMap.insert({(char*)$1, val});
+                            }
+          builder->CreateStore($3, ValueMap[(char*)$1].irVal); 
+}
 
 RoutineCall: CallFunction Identifier EndlToken {
                             Function *func = module->getFunction((char*)$2);
@@ -149,15 +231,16 @@ Primary:    IntLiteral { $$ = builder->getInt32(atoi((char*)$1)); }
 ;
 
 Value:      Identifier  {
+#ifdef DEBUG
+                              printf("Declaration or usage\n");
+#endif
                             if (ValueMap.find((char*)$1) == ValueMap.end()) {
-                              printf("Declaration\n");
                               module->getOrInsertGlobal((char*)$1, builder->getInt32Ty());
                               value_t val;
                               val.irVal = module->getNamedGlobal((char*)$1);
                               val.realVal = 100500;
                               ValueMap.insert({(char*)$1, val});
-                            } else
-                              printf("Usage\n");
+                            }
                             $$ = builder->CreateConstGEP1_32(builder->getInt32Ty(), ValueMap[(char*)$1].irVal, 0);
                         }
 %%

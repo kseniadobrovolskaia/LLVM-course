@@ -55,6 +55,7 @@ SsFun SsMain {
     SsIf (step < 10) : loopStepEnd__
       iterStep:
         step = step + 1__
+        SsCrOut(step)__
         SsCrawl loopStep__
   loopStepEnd:
 }

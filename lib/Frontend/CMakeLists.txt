@@ -2,24 +2,61 @@ cmake_minimum_required(VERSION 3.14)
 
 project(Frontend)
 
-set(CMAKE_C_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-
-
+set(CMAKE_C_COMPILER "/usr/bin/clang++")
 set(SL_DIR ${CMAKE_SOURCE_DIR}/lib/Frontend)
 
-add_custom_target(BisonRun ALL
-  COMMAND bison -d ${SL_DIR}/SnakeLang.y)
+find_package(LLVM REQUIRED)
+if(NOT LLVM_FOUND)
+  message(SEND_ERROR "Failed to find LLVM13")
+  return()
+else()
+  include_directories(${LLVM_INCLUDE_DIR})
+endif()
 
-add_custom_target(FlexRun ALL
-  COMMAND lex ${SL_DIR}/SnakeLang.lex)
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
 
-add_custom_target(ClangRun ALL
-  COMMAND clang++ -o SnakeLang
-  lex.yy.c SnakeLang.tab.c ${SL_DIR}/main.cpp -I${CMAKE_SOURCE_DIR}/build/lib/Frontend -I${CMAKE_SOURCE_DIR}/lib/Frontend -I${CMAKE_SOURCE_DIR}/include/GraphicalApp ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/GraphicalApp.c -lSDL2 -I/usr/lib/llvm-14/include -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -L/usr/lib/llvm-14/lib /usr/lib/llvm-14/lib/libLLVM-14.so)
+include_directories(${CMAKE_SOURCE_DIR}/include/Frontend
+                    ${CMAKE_SOURCE_DIR}/include/GraphicalApp
+                    ${CMAKE_CURRENT_BINARY_DIR}
+                    ${LLVM_INCLUDE_DIR}) 
 
-add_custom_target(SnakeLangRun ALL
-  COMMAND ./SnakeLang ${SL_DIR}/Snake.sl)
+flex_target(
+  Lexer
+  ${SL_DIR}/SnakeLang.lex
+  ${CMAKE_CURRENT_BINARY_DIR}/Lexer.cc
+)
+
+bison_target(
+  Parser
+  ${SL_DIR}/SnakeLang.y
+  ${CMAKE_CURRENT_BINARY_DIR}/Parser.cc
+  COMPILE_FLAGS "-Wcounterexamples -v --defines=${CMAKE_CURRENT_BINARY_DIR}/Parser.tab.hh"
+)
+
+add_flex_bison_dependency(Lexer Parser)
+
+set(SOURSES 
+            ${BISON_Parser_OUTPUTS}
+            ${FLEX_Lexer_OUTPUTS}
+            ${CMAKE_SOURCE_DIR}/lib/Frontend/main.cpp
+            ${CMAKE_SOURCE_DIR}/lib/GraphicalApp/GraphicalApp.c
+            )
+
+add_compile_options(-Wall -std=c++2a -fexceptions)
+
+
+add_executable(
+  SnakeLang
+
+  ${SOURSES}
+)
+target_link_libraries(
+  SnakeLang
+  SDL2
+  ${CMAKE_CURRENT_BINARY_DIR}
+  LLVM
+)
 
 

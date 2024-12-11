@@ -2,7 +2,9 @@
 
 #include "GraphicalApp.h"
 #include "Lexems.h"
-#include "SnakeLang.tab.h"
+#include "Parser.tab.hh"
+
+const char *IRFileName = "llvmIR.txt";
 
 LLVMContext context;
 IRBuilder<> *builder;
@@ -10,6 +12,7 @@ Module *module;
 Function *curFunc;
 FunctionCallee updateScreenFunc;
 FunctionCallee putPixelFunc;
+FunctionCallee printFunc;
 
 std::map<std::string, value_t> ValueMap;
 std::map<std::string, BasicBlock *> BBMap;
@@ -34,6 +37,11 @@ int main(int argc, char **argv) {
       FunctionType::get(voidType, putPixelParamTypes, false);
   putPixelFunc = module->getOrInsertFunction("putPixel", putPixelType);
 
+  // declare void @print(i32 noundef)
+  FunctionType *printType = FunctionType::get(IntegerType::getInt32Ty(context), PointerType::get(Type::getInt8Ty(context), 0), true /* this is var arg func type*/);
+  printFunc = module->getOrInsertFunction("printf", printType);
+  
+                                                   
   // declare void @updateScreen(...)
   FunctionType *updateScreenType = FunctionType::get(voidType, false);
   updateScreenFunc =
@@ -43,20 +51,24 @@ int main(int argc, char **argv) {
   yyin = fopen(argv[1], "r");
   yyparse();
 
-  outs() << "[LLVM IR]:\n";
-  module->print(outs(), nullptr);
+  std::error_code EC;
+  llvm::raw_fd_ostream IRFile(IRFileName, EC); 
+
+  module->print(IRFile, nullptr);
   outs() << "\n";
   bool verif = verifyModule(*module, &outs());
   outs() << "[VERIFICATION] " << (!verif ? "OK\n\n" : "FAIL\n\n");
 
   // Interpreter of LLVM IR
-  outs() << "[EE] Run\n";
   ExecutionEngine *ee = EngineBuilder(std::unique_ptr<Module>(module)).create();
   ee->InstallLazyFunctionCreator([=](const std::string &fnName) -> void * {
     if (fnName == "updateScreen") {
       return reinterpret_cast<void *>(updateScreen);
     }
     if (fnName == "putPixel") {
+      return reinterpret_cast<void *>(putPixel);
+    }
+    if (fnName == "print") {
       return reinterpret_cast<void *>(putPixel);
     }
     return nullptr;
@@ -76,11 +88,6 @@ int main(int argc, char **argv) {
     return -1;
   }
   ee->runFunction(mainFunc, noargs);
-  outs() << "[EE] Done\n";
-
-  for (auto &value : ValueMap) {
-    outs() << value.first << " = " << value.second.realVal << "\n";
-  }
 
   exitApp();
   return 0;

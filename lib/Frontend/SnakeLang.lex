@@ -1,7 +1,7 @@
 %{
 #define YYSTYPE void*
 #define YYERROR_VERBOSE
-#include "SnakeLang.tab.h"
+#include "Parser.tab.hh"
 extern "C" int yylex();
 %}
 
@@ -12,24 +12,66 @@ extern "C" int yylex();
 
 [/][/].*\n       ; // comment
 [0-9]*           {
+#ifdef DEBUG
                    printf("IntLiteral %s\n", yytext);
+#endif
                    yylval = strdup(yytext);
                    return IntLiteral;
                  }
-"SsFun"          { printf("FunctionBegin\n"); return FunctionBegin; }
-"}"              { printf("FunctionEnd\n"); return FunctionEnd; }
-"SsCall"         { printf("CallFunction\n"); return CallFunction; }
-"SsIf"           { printf("IfToken\n"); return IfToken; }
-"SsCrawl"        { printf("CrawlToken\n"); return CrawlToken; }
-"SsPutPixel"     { printf("PutToken\n"); return PutPixelToken; }
-"SsUpdateScreen" { printf("UpdateScreenToken\n"); return UpdateScreenToken; }
-"__"             { printf("EndlToken\n"); return EndlToken; }
-[A-Za-z]+        { // identifier or array
+"SsFun"          { 
+#ifdef DEBUG
+                   printf("FunctionBegin\n"); 
+#endif
+                   return FunctionBegin; }
+"}"              { 
+#ifdef DEBUG
+                   printf("FunctionEnd\n"); 
+#endif
+                   return FunctionEnd; }
+"SsCall"         { 
+#ifdef DEBUG
+                   printf("CallFunction\n"); 
+#endif
+                   return CallFunction; }
+"SsIf"           { 
+#ifdef DEBUG
+                   printf("IfToken\n"); 
+#endif
+                   return IfToken; }
+"SsCrawl"        { 
+#ifdef DEBUG
+                   printf("CrawlToken\n"); 
+#endif
+                   return CrawlToken; }
+"SsPutPixel"     { 
+#ifdef DEBUG
+                   printf("PutToken\n"); 
+#endif
+                   return PutPixelToken; }
+"SsCrOut"        { 
+#ifdef DEBUG
+                   printf("PrintToken\n"); 
+#endif
+                   return PrintToken; }
+"SsUpdateScreen" { 
+#ifdef DEBUG
+                   printf("UpdateScreenToken\n"); 
+#endif
+                   return UpdateScreenToken; }
+"__"             { 
+#ifdef DEBUG
+                   printf("EndlToken\n"); 
+#endif
+                   return EndlToken; }
+[A-Za-z]+        { // variable 
+                   
+#ifdef DEBUG
                    printf("Identifier %s\n", yytext);
+#endif
                    yylval = strdup(yytext);
                    return Identifier;
                  }
-[ \t\r\n]        ;  // whitespace
+[ \t\r\n]        ; // whitespace
 .                { return *yytext; }
 
 %%

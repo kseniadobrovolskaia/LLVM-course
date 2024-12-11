@@ -1,2 +1,5 @@
 build
 *.swp
+
+Test/SnakeLangTests/Results
+Test/SnakeLangTests/GenTests.h

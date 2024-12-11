@@ -1,4 +1,4 @@
-// 1 Test: SsPutPixel, SsUpdateScreen
+// SsPutPixel, SsUpdateScreen
 
 // This program draw a snake that crawls
 
@@ -59,7 +59,11 @@ SsFun SsMain {
         step = step + 1__
         SsCrawl loopStep__
   loopStepEnd:
+    SsCrOut(step)__
 }
 
+// CHECK: [VERIFICATION] OK
+// Check that last step was 5
+// CHECK: 5
 
 

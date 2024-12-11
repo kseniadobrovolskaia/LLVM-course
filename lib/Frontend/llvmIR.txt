@@ -1,0 +1,148 @@
+; ModuleID = 'top'
+source_filename = "top"
+
+@step = external global i32
+@snakeplace = external global i32
+@snakewidth = external global i32
+@snakecolor = external global i32
+@snakey = external global i32
+@snakex = external global i32
+@y = external global i32
+@x = external global i32
+@backgroundcolor = external global i32
+@0 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+
+declare void @putPixel(i32, i32, i32)
+
+declare i32 @printf(i8*, ...)
+
+declare void @updateScreen()
+
+define void @drawSnake() {
+entry:
+  %0 = load i32, i32* @step, align 4
+  %1 = icmp eq i32 %0, 0
+  %2 = zext i1 %1 to i32
+  %3 = icmp ne i32 %2, 0
+  br i1 %3, label %Declarations, label %loopSnakeY
+
+Declarations:                                     ; preds = %entry
+  store i32 100, i32* @snakeplace, align 4
+  store i32 40, i32* @snakewidth, align 4
+  store i32 14794471, i32* @snakecolor, align 4
+  %4 = load i32, i32* @step, align 4
+  %5 = load i32, i32* @snakewidth, align 4
+  %6 = mul i32 %4, %5
+  store i32 %6, i32* @snakey, align 4
+  br label %loopSnakeY
+
+loopSnakeY:                                       ; preds = %loopSnakeXEnd, %Declarations, %entry
+  %7 = load i32, i32* @snakeplace, align 4
+  store i32 %7, i32* @snakex, align 4
+  %8 = load i32, i32* @snakey, align 4
+  %9 = load i32, i32* @step, align 4
+  %10 = add i32 %9, 1
+  %11 = load i32, i32* @snakewidth, align 4
+  %12 = mul i32 %10, %11
+  %13 = icmp slt i32 %8, %12
+  %14 = zext i1 %13 to i32
+  %15 = icmp ne i32 %14, 0
+  br i1 %15, label %loopSnakeX, label %loopSnakeYEnd
+
+loopSnakeX:                                       ; preds = %iterSnakeX, %loopSnakeY
+  %16 = load i32, i32* @snakex, align 4
+  %17 = load i32, i32* @snakeplace, align 4
+  %18 = load i32, i32* @snakewidth, align 4
+  %19 = add i32 %17, %18
+  %20 = icmp slt i32 %16, %19
+  %21 = zext i1 %20 to i32
+  %22 = icmp ne i32 %21, 0
+  br i1 %22, label %iterSnakeX, label %loopSnakeXEnd
+
+loopSnakeYEnd:                                    ; preds = %loopSnakeY
+  ret void
+
+iterSnakeX:                                       ; preds = %loopSnakeX
+  %23 = load i32, i32* @snakex, align 4
+  %24 = load i32, i32* @snakey, align 4
+  %25 = load i32, i32* @snakecolor, align 4
+  call void @putPixel(i32 %23, i32 %24, i32 %25)
+  %26 = load i32, i32* @snakex, align 4
+  %27 = add i32 %26, 1
+  store i32 %27, i32* @snakex, align 4
+  br label %loopSnakeX
+
+loopSnakeXEnd:                                    ; preds = %loopSnakeX
+  %28 = load i32, i32* @snakey, align 4
+  %29 = add i32 %28, 1
+  store i32 %29, i32* @snakey, align 4
+  br label %loopSnakeY
+}
+
+define void @drawBackground() {
+entry:
+  store i32 0, i32* @y, align 4
+  br label %loopY
+
+loopY:                                            ; preds = %loopXEnd, %entry
+  store i32 0, i32* @x, align 4
+  %0 = load i32, i32* @y, align 4
+  %1 = icmp slt i32 %0, 256
+  %2 = zext i1 %1 to i32
+  %3 = icmp ne i32 %2, 0
+  br i1 %3, label %loopX, label %loopYEnd
+
+loopX:                                            ; preds = %iterX, %loopY
+  %4 = load i32, i32* @x, align 4
+  %5 = icmp slt i32 %4, 512
+  %6 = zext i1 %5 to i32
+  %7 = icmp ne i32 %6, 0
+  br i1 %7, label %iterX, label %loopXEnd
+
+loopYEnd:                                         ; preds = %loopY
+  ret void
+
+iterX:                                            ; preds = %loopX
+  %8 = load i32, i32* @x, align 4
+  %9 = load i32, i32* @y, align 4
+  %10 = load i32, i32* @backgroundcolor, align 4
+  call void @putPixel(i32 %8, i32 %9, i32 %10)
+  %11 = load i32, i32* @x, align 4
+  %12 = add i32 %11, 1
+  store i32 %12, i32* @x, align 4
+  br label %loopX
+
+loopXEnd:                                         ; preds = %loopX
+  %13 = load i32, i32* @y, align 4
+  %14 = add i32 %13, 1
+  store i32 %14, i32* @y, align 4
+  br label %loopY
+}
+
+define void @SsMain() {
+entry:
+  store i32 0, i32* @step, align 4
+  store i32 12187338, i32* @backgroundcolor, align 4
+  br label %loopStep
+
+loopStep:                                         ; preds = %iterStep, %entry
+  call void @drawBackground()
+  call void @drawSnake()
+  call void @updateScreen()
+  %0 = load i32, i32* @step, align 4
+  %1 = icmp slt i32 %0, 10
+  %2 = zext i1 %1 to i32
+  %3 = icmp ne i32 %2, 0
+  br i1 %3, label %iterStep, label %loopStepEnd
+
+iterStep:                                         ; preds = %loopStep
+  %4 = load i32, i32* @step, align 4
+  %5 = add i32 %4, 1
+  store i32 %5, i32* @step, align 4
+  %6 = load i32, i32* @step, align 4
+  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 %6)
+  br label %loopStep
+
+loopStepEnd:                                      ; preds = %loopStep
+  ret void
+}
